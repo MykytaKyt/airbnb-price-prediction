@@ -1,0 +1,12 @@
+scikit-learn
+shap
+pandas_profiling
+seaborn
+matplotlib
+catboost
+numpy
+keybert
+xgboost
+lightgbm
+tqdm
+scipy
