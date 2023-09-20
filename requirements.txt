@@ -1,6 +1,5 @@
 scikit-learn
 shap
-pandas_profiling
 seaborn
 matplotlib
 catboost
