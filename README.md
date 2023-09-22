@@ -157,7 +157,5 @@ Here's a comparison of the performance of different regression models:
 | Random Forest | 0.235428 | 0.364912 |
 | Ensemble      | 0.188871 | 0.313804 |
 
-The best
-
- model, LGBMRegressor, outperformed other models in terms of MSE and MAE. You can use the saved best model for making house price predictions.
+The best model, LGBMRegressor, outperformed other models in terms of MSE and MAE. You can use the saved best model for making house price predictions.
 
