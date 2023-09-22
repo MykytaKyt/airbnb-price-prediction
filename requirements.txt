@@ -1,5 +1,4 @@
 scikit-learn
-shap
 seaborn
 matplotlib
 catboost
