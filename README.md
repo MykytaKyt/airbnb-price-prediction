@@ -64,3 +64,13 @@ The project is organized as follows:
    ```
    make clean
    ```
+   
+
+Model Comparison:
+| Model         | MSE      | MAE      |
+|---------------|----------|----------|
+| CatBoost      | 0.290520 | 0.447828 |
+| XGBoost       | 0.193087 | 0.323286 |
+| LightGBM      | 0.182430 | 0.316493 |
+| Random Forest | 0.235428 | 0.364912 |
+| Ensemble      | 0.188871 | 0.313804 |
