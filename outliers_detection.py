@@ -1,59 +1,61 @@
 import click
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import IsolationForest
-from sklearn.cluster import DBSCAN
-from sklearn.manifold import TSNE
 from sklearn.svm import OneClassSVM
-from click import secho
-
-
-# Function to detect outliers
-def detect_outliers(input_file, output_file):
-    try:
-        # Load the preprocessed data
-        df = pd.read_csv(input_file)
-
-        # Initialize Isolation Forest model
-        isolation_forest = IsolationForest(n_estimators=100)
-
-        # Fit Isolation Forest to detect outliers
-        outlier_labels = isolation_forest.fit_predict(df[['price']])
-
-        # Identify outlier indices
-        outlier_indices = df.index[outlier_labels == -1]
-
-        # Remove outliers from the dataframe
-        df_no_outliers = df.drop(outlier_indices)
-
-        # Initialize DBSCAN model
-        db = DBSCAN(eps=250, min_samples=9, metric='euclidean')
-
-        # Fit DBSCAN to detect outliers
-        db_labels = db.fit_predict(df_no_outliers.values)
-
-        # Identify outlier indices
-        db_outlier_indices = df_no_outliers.index[db_labels == -1]
-
-        # Remove DBSCAN outliers from the dataframe
-        df_no_db_outliers = df_no_outliers.drop(db_outlier_indices)
-
-        # Perform t-SNE visualization of the data
-        X_embedded = TSNE(n_components=2).fit_transform(df_no_db_outliers.values)
-
-        # Save the data without outliers
-        df_no_db_outliers.to_csv(output_file, index=False)
-
-        secho("Outlier detection completed.", fg="green")
-    except Exception as e:
-        secho(f"Error: {str(e)}", fg="red")
-
 
 @click.command()
 @click.option("--input-file", required=True, help="Input CSV file path")
-@click.option("--output-file", required=True, help="Output CSV file path after outlier detection")
+@click.option("--output-file", required=True, help="Output CSV file path for cleaned DataFrame")
 def main(input_file, output_file):
-    detect_outliers(input_file, output_file)
+    try:
+        click.secho("Loading the input DataFrame...", fg="cyan")
+        # Load the input DataFrame
+        df = pd.read_csv(input_file)
+        click.secho("Input DataFrame loaded successfully.", fg="green")
 
+        click.secho("Performing Isolation Forest Outlier Detection...", fg="cyan")
+        isolation_forest = IsolationForest(n_estimators=200, max_samples='auto', contamination=0.01)  # Adjust contamination value
+        isolation_forest.fit(df[['log_price']].values.reshape(-1, 1))
+        isolation_forest_outlier = isolation_forest.predict(df[['log_price']].values.reshape(-1, 1))
+
+        click.secho("Performing One-Class SVM Outlier Detection...", fg="cyan")
+        model = OneClassSVM(kernel='rbf', gamma=0.001, nu=0.01)  # Adjust gamma and nu values
+        oneclass_svm_outlier = model.fit_predict(df[['log_price']].values.reshape(-1, 1))
+
+        click.secho("Performing Z-Score Outlier Detection...", fg="cyan")
+        zscore = (df['log_price'] - df['log_price'].mean()) / df['log_price'].std()
+        zscore_outlier = np.abs(zscore) > 1.0  # Adjust the Z-Score threshold
+
+        click.secho("Performing Tukey's Method Outlier Detection...", fg="cyan")
+        Q1 = df['log_price'].quantile(0.25)
+        Q3 = df['log_price'].quantile(0.75)
+        IQR = Q3 - Q1
+        tukey_outlier = (df['log_price'] < (Q1 - 1.5 * IQR)) | (
+                    df['log_price'] > (Q3 + 1.5 * IQR))  # Adjust the multiplier
+
+        combined_outlier = (
+            isolation_forest_outlier +
+            oneclass_svm_outlier +
+            zscore_outlier +
+            tukey_outlier
+        ) >= 3
+
+        click.secho(f"Number of values identified as outliers: {np.sum(combined_outlier)}", fg="yellow")
+
+        click.secho("Removing Outliers...", fg="cyan")
+        df = df[~combined_outlier]
+        df = df.loc[df['log_price'] > 1]
+        df = df.astype(int)
+        click.secho(f"Number of values remaining: {df.shape[0]}", fg="green")
+        click.secho("Outliers removed from the DataFrame.", fg="green")
+
+        click.secho(f"Saving DataFrame without Outliers to {output_file}...", fg="cyan")
+        df.to_csv(output_file, index=False)
+        click.secho("DataFrame without Outliers saved successfully.", fg="green")
+
+    except Exception as e:
+        click.secho(f"Error: {str(e)}", fg="red")
 
 if __name__ == "__main__":
     main()

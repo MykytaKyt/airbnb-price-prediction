@@ -6,7 +6,8 @@ from click import secho
 def preprocess_data(input_file, output_file):
     try:
         df = pd.read_csv(input_file)
-
+        df = df.drop(columns=['first_review', 'zipcode', 'thumbnail_url', 'neighbourhood', 'name',
+            'longitude', 'latitude', 'last_review', 'host_since'])
         df["log_price"] = df["log_price"].replace('[\$,]', '', regex=True).astype(float)
         df["cleaning_fee"] = df["cleaning_fee"].replace('[\$,]', '', regex=True).astype(float)
 
@@ -15,7 +16,6 @@ def preprocess_data(input_file, output_file):
 
         df['city'] = df['city'].replace({'Washington, D.C.': 'Washington'})
         df['city'] = df['city'].replace({'Washington ': 'Washington'})
-
         df.to_csv(output_file, index=False)
 
         secho("Data preprocessing completed.", fg="green")

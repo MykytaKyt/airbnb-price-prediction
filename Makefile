@@ -1,28 +1,12 @@
-INPUT_DATA = input_data.csv
-OUTPUT_DATA = text_processed_data.csv
-OUTPUT_NO_OUTLIERS = data_no_outliers.csv
-TRAINED_MODEL = trained_model
-PREDICTIONS_FILE = predictions.csv
+all: data_process text_process new_features outliers
 
-PYTHON = python
-
-all: train predict
-
-setup:
-    pip install -r requirements.txt
-
-train: data_processing.py outliers_detection.py train.py
-    @echo "Training the model..."
-    $(PYTHON) data_processing.py --input-file $(INPUT_DATA) --output-file $(OUTPUT_DATA)
-    $(PYTHON) outliers_detection.py --input-file $(OUTPUT_DATA) --output-file $(OUTPUT_NO_OUTLIERS)
-    $(PYTHON) train.py --input-file $(OUTPUT_NO_OUTLIERS) --output-model $(TRAINED_MODEL)
-
-predict: predict.py
-    @echo "Making predictions..."
-    $(PYTHON) predict.py --input-file $(INPUT_DATA) --model-file $(TRAINED_MODEL) --output-file $(PREDICTIONS_FILE)
-
-clean:
-    @echo "Cleaning up..."
-    rm -f $(OUTPUT_DATA) $(OUTPUT_NO_OUTLIERS) $(TRAINED_MODEL) $(PREDICTIONS_FILE)
-
-.PHONY: all train predict clean
+data_process:
+	python data_processing.py --input-file data/train.csv --output-file data/prep.csv
+text_process:
+	python text_processing.py --input-file data/prep.csv --output-file data/text_p.csv
+new_features:
+	python feature_engineering.py --input-file data/text_p.csv --output-file data/inpuded.csv
+outliers:
+	python outliers_detection.py --input-file data/inpuded.csv --output-file data/outlier_removed.csv
+train:
+	python train.py --input-file data/outlier_removed.csv
